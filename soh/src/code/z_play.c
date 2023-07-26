@@ -11,6 +11,9 @@
 #include <overlays/actors/ovl_En_Niw/z_en_niw.h>
 #include "soh/Enhancements/enhancementTypes.h"
 #include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
+#ifdef ENABLE_REMOTE_CONTROL
+#include "soh/Enhancements/game-interactor/GameInteractor_Anchor.h"
+#endif
 
 #include <libultraship/libultraship.h>
 
@@ -171,6 +174,7 @@ void Play_Destroy(GameState* thisx) {
     PlayState* play = (PlayState*)thisx;
     Player* player = GET_PLAYER(play);
 
+    GameInteractor_ExecuteOnPlayDestroy();
 
     // Only initialize the frame counter when exiting the title screen
     if (gSaveContext.fileNum == 0xFF) {
@@ -744,6 +748,13 @@ void Play_Init(GameState* thisx) {
                     GET_PLAYER(play)->actor.world.pos.y + Player_GetHeight(GET_PLAYER(play)) + 5.0f,
                     GET_PLAYER(play)->actor.world.pos.z, 0, 0, 0, 1, true);
     }
+#ifdef ENABLE_REMOTE_CONTROL
+    // #region SOH [Co-op]
+    if (CVarGetInteger("gRemote.Scheme", 0) == GI_SCHEME_ANCHOR) {
+        Anchor_SpawnClientFairies();
+    }
+    // #endregion
+#endif
 }
 
 void Play_Update(PlayState* play) {
@@ -1712,6 +1723,8 @@ void Play_Draw(PlayState* play) {
                 }
             }
         }
+
+        GameInteractor_ExecuteOnPlayDrawEnd();
 
         // Reset the inverted culling
         if (CVarGetInteger("gMirroredWorld", 0)) {
